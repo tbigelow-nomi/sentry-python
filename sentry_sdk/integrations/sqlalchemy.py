@@ -121,24 +121,85 @@ def _handle_error(context: "Any", *args: "Any") -> None:
         ctx_mgr.__exit__(None, None, None)
 
 
+# See: https://opentelemetry.io/docs/specs/semconv/registry/attributes/db/
+_DIALECT_TO_OTEL_SYSTEM_NAMES = {
+    "ingres": "actian.ingres",
+    "dynamodb": "aws.dynamodb",
+    "redshift": "aws.redshift",
+    # "": "azure.cosmosdb",
+    # "": "couchbase",
+    # "": "couchdb",
+    # "": "derby",
+    "firebird": "firebirdsql",
+    # "": "gcp.spanner",
+    # "": "h2database",
+    # "": "hbase",
+    # "": "hive",
+    "db2+ibm_db": "ibm.db2",
+    "ibm_db_sa": "ibm.db2",
+    # "": "ibm.informix",
+    "netezza+pyodbc": "ibm.netezza",
+    # "": "influxdb",
+    # "": "instantdb",
+    # "": "intersystems.cache",
+    # "": "memcached",
+    # "": "neo4j",
+    # "": "opensearch",
+    # "": "other_sql",
+    "postgres": "postgresql",
+    # "": "sap.hana",
+    # "": "sap.maxdb",
+    # "": "softwareag.adabas",
+    # "": "teradata",
+    # "": "trino",
+}
+
 # See: https://docs.sqlalchemy.org/en/20/dialects/index.html
+_SQLALCHEMY_DIALECTS = [
+    "access",
+    "athena",
+    "aurora",
+    "drill",
+    "druid",
+    "hive",
+    "cassandra",
+    "clickhouse",
+    "cockroachdb",
+    "cratedb",
+    "databend",
+    "databricks",
+    "denodo",
+    "exasolution",
+    "elasticsearch",
+    "firebolt",
+    "bigquery",
+    "gsheets",
+    "greenplum",
+    "hsqldb",
+    "impala",
+    "kinetica",
+    "mariadb",
+    "mssql",
+    "mysql",
+    "oracle",
+    "postgresql",
+    "sqlite",
+    "solr",
+]
+
+
 def _get_db_system(name: str) -> "Optional[str]":
     name = str(name)
 
-    if "sqlite" in name:
-        return "sqlite"
+    # If name is mapped from SQLAlchemy dialect to OTel well-known name, use the mapped value.
+    otel_system_name = _DIALECT_TO_OTEL_SYSTEM_NAMES.get(name)
+    if otel_system_name:
+        return otel_system_name
 
-    if "postgres" in name:
-        return "postgresql"
-
-    if "mariadb" in name:
-        return "mariadb"
-
-    if "mysql" in name:
-        return "mysql"
-
-    if "oracle" in name:
-        return "oracle"
+    # If name is a known SQLAlchemy dialect without a mapping, use the dialect name.
+    matches = [dialect for dialect in _SQLALCHEMY_DIALECTS if name in dialect]
+    if matches:
+        return matches[0]
 
     return None
 
