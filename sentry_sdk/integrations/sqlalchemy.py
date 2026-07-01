@@ -187,19 +187,17 @@ _SQLALCHEMY_DIALECTS = [
     "solr",
 ]
 
+# Combine our mappings with 1:1 dialects
+_SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES = _DIALECT_TO_OTEL_SYSTEM_NAMES.copy()
+_SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES.update({d: d for d in _SQLALCHEMY_DIALECTS})
+
 
 def _get_db_system(name: str) -> "Optional[str]":
     name = str(name)
 
-    # If name is mapped from SQLAlchemy dialect to OTel well-known name, use the mapped value.
-    otel_system_name = _DIALECT_TO_OTEL_SYSTEM_NAMES.get(name)
-    if otel_system_name:
-        return otel_system_name
-
-    # If name is a known SQLAlchemy dialect without a mapping, use the dialect name.
-    matches = [dialect for dialect in _SQLALCHEMY_DIALECTS if name in dialect]
-    if matches:
-        return matches[0]
+    for dialect, system_name in _SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES.items():
+        if dialect in name:
+            return system_name
 
     return None
 
