@@ -121,83 +121,67 @@ def _handle_error(context: "Any", *args: "Any") -> None:
         ctx_mgr.__exit__(None, None, None)
 
 
-# See: https://opentelemetry.io/docs/specs/semconv/registry/attributes/db/
-_DIALECT_TO_OTEL_SYSTEM_NAMES = {
+# See for OTel well-known names: https://opentelemetry.io/docs/specs/semconv/registry/attributes/db/
+_DIALECT_TO_SYSTEM_NAMES = {
     "ingres": "actian.ingres",
     "dynamodb": "aws.dynamodb",
     "redshift": "aws.redshift",
-    # "": "azure.cosmosdb",
-    # "": "couchbase",
-    # "": "couchdb",
-    # "": "derby",
+    "cosmosdb": "azure.cosmosdb",
     "firebird": "firebirdsql",
-    # "": "gcp.spanner",
-    # "": "h2database",
-    # "": "hbase",
-    # "": "hive",
-    "db2+ibm_db": "ibm.db2",
-    "ibm_db_sa": "ibm.db2",
-    # "": "ibm.informix",
-    "netezza+pyodbc": "ibm.netezza",
-    # "": "influxdb",
-    # "": "instantdb",
-    # "": "intersystems.cache",
-    # "": "memcached",
-    # "": "neo4j",
-    # "": "opensearch",
-    # "": "other_sql",
+    "ibm_db": "ibm.db2",
+    "netezza": "ibm.netezza",
     "postgres": "postgresql",
-    # "": "sap.hana",
-    # "": "sap.maxdb",
-    # "": "softwareag.adabas",
-    # "": "teradata",
-    # "": "trino",
 }
 
+# 1:1 dialect to system names
 # See: https://docs.sqlalchemy.org/en/20/dialects/index.html
-_SQLALCHEMY_DIALECTS = [
-    "access",
-    "athena",
-    "aurora",
-    "drill",
-    "druid",
-    "hive",
-    "cassandra",
-    "clickhouse",
-    "cockroachdb",
-    "cratedb",
-    "databend",
-    "databricks",
-    "denodo",
-    "exasolution",
-    "elasticsearch",
-    "firebolt",
-    "bigquery",
-    "gsheets",
-    "greenplum",
-    "hsqldb",
-    "impala",
-    "kinetica",
-    "mariadb",
-    "mssql",
-    "mysql",
-    "oracle",
-    "postgresql",
-    "sqlite",
-    "solr",
-]
-
-# Combine our mappings with 1:1 dialects
-_SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES = _DIALECT_TO_OTEL_SYSTEM_NAMES.copy()
-_SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES.update({d: d for d in _SQLALCHEMY_DIALECTS})
+_DIALECT_TO_SYSTEM_NAMES.update(
+    {
+        dialect: dialect
+        for dialect in [
+            "access",
+            "athena",
+            "aurora",
+            "cassandra",
+            "couchbase",
+            "couchdb",
+            "drill",
+            "clickhouse",
+            "cockroachdb",
+            "cratedb",
+            "databend",
+            "databricks",
+            "denodo",
+            "druid",
+            "exasolution",
+            "elasticsearch",
+            "firebolt",
+            "bigquery",
+            "gsheets",
+            "greenplum",
+            "hive",
+            "hsqldb",
+            "impala",
+            "kinetica",
+            "mariadb",
+            "mssql",
+            "mysql",
+            "oracle",
+            "postgresql",
+            "sqlite",
+            "snowflake",
+            "solr",
+        ]
+    }
+)
 
 
 def _get_db_system(name: str) -> "Optional[str]":
-    name = str(name)
+    names = str(name).split("+")
 
-    for dialect, system_name in _SQLALCHEMY_DIALECTS_TO_SYSTEM_NAMES.items():
-        if dialect in name:
-            return system_name
+    for name in names:
+        if name in _DIALECT_TO_SYSTEM_NAMES:
+            return _DIALECT_TO_SYSTEM_NAMES[name]
 
     return None
 
